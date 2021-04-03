@@ -17,7 +17,6 @@ async def on_ready():
             f'{guild.name}(id: {guild.id})'
         )
 
-
 @Bot.command(pass_context=True)
 async def hello(ctx):
     await ctx.send("Привет мой аналоговый друг!")
@@ -46,4 +45,5 @@ Bot.run(TOKEN)
 #             f'{client.user} подключились к чату:\n'
 #             f'{guild.name}(id: {guild.id})'
 #         )
+
 # client.run(TOKEN)
