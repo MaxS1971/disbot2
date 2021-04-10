@@ -4,9 +4,11 @@ import requests
 import random
 
 with open("tokendbot.txt", "r") as tf:
-    TOKEN = tf.readline()
+    TOKEN_LIST = tf.readlines()
+TOKEN = ''.join(map(str.strip, TOKEN_LIST))
 
 Bot = commands.Bot(command_prefix="!!")
+
 
 @Bot.event
 async def on_ready():
@@ -17,14 +19,17 @@ async def on_ready():
             f'{guild.name}(id: {guild.id})'
         )
 
+
 @Bot.command(pass_context=True)
 async def hello(ctx):
     await ctx.send("Привет мой аналоговый друг!")
+
 
 @Bot.command(name="randint")
 async def my_randint(ctx, min_int, max_int):
     num = random.randint(int(min_int), int(max_int))
     await ctx.send(num)
+
 
 # @Bot.event
 # async def on_message(message):
@@ -35,8 +40,7 @@ async def my_randint(ctx, min_int, max_int):
 
 Bot.run(TOKEN)
 
-
-#client = discord.Client()
+# client = discord.Client()
 # @client.event
 # async def on_ready():
 #     print(f'{client.user} подключен к Discord!')
