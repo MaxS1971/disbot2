@@ -9,6 +9,41 @@ TOKEN = ''.join(map(str.strip, TOKEN_LIST))
 
 Bot = commands.Bot(command_prefix="!!")
 
+WEATHER_API_KEY = "dc972cf9-8a9d-49ca-acca-bdf6f98dc450"
+headers = {"X-Yandex-API-Key" : WEATHER_API_KEY}
+
+def weather_response(place):
+    # 39.954987 43.412182
+    coords = ("39.954987", "43.412182")
+    weather_api_server = 'https://api.weather.yandex.ru/v1/forecast?'
+    weather_param = {
+        "lon" : float(coords[0]),
+        "lat" : float(coords[1]),
+        "lang": "ru_RU"
+    }
+    response = requests.get(weather_api_server, weather_param, headers=headers)
+    return response.json()
+
+def current_weather(response):
+    city = response["info"]["tzinfo"]["name"].split('/')[-1]
+    date = response["now_dt"][:10]
+    offset = response["info"]["tzinfo"]["offset"] // 3600
+    time = response["now_dt"][11:16]
+    h, m = map(int, time.split(':'))
+    time = f'{h + offset}:{m:02}'
+    fact = response["fact"]
+    temp = fact["temp"]
+    condition = fact["condition"]
+    wind_dir = fact["wind_dir"]
+    wind_speed = fact["wind_speed"]
+    pressure = fact["pressure_mm"]
+    humidity = fact["humidity"]
+    return f'Current weather in {city} today {date} at time {time}:\n' \
+           f'Temperature: {temp},\n' \
+           f'Pressure: {pressure} mm,\n' \
+           f'Humidity: {humidity}%,\n' \
+           f'{condition},\n' \
+           f'Wind {wind_dir}, {wind_speed} m/s.'
 
 @Bot.event
 async def on_ready():
@@ -19,11 +54,15 @@ async def on_ready():
             f'{guild.name}(id: {guild.id})'
         )
 
-
 @Bot.command(pass_context=True)
 async def hello(ctx):
     await ctx.send("Привет мой аналоговый друг!")
 
+@Bot.command(name="current")
+async def current(ctx):
+    response = weather_response("Сочи")
+    message = current_weather(response)
+    await ctx.send(message)
 
 @Bot.command(name="randint")
 async def my_randint(ctx, min_int, max_int):
@@ -36,7 +75,6 @@ async def my_randint(ctx, min_int, max_int):
 #     if message.author == Bot.user:
 #         return
 #     await message.channel.send(f"{message.author} : {message.content}")
-
 
 Bot.run(TOKEN)
 
