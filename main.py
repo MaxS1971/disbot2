@@ -10,22 +10,47 @@ TOKEN = ''.join(map(str.strip, TOKEN_LIST))
 Bot = commands.Bot(command_prefix="!!")
 
 WEATHER_API_KEY = "dc972cf9-8a9d-49ca-acca-bdf6f98dc450"
-headers = {"X-Yandex-API-Key" : WEATHER_API_KEY}
+headers = {"X-Yandex-API-Key": WEATHER_API_KEY}
+
+
+def get_coords(toponym_to_find):
+    geocoder_api_server = "http://geocode-maps.yandex.ru/1.x/"
+
+    geocoder_params = {
+        "apikey": "40d1649f-0493-4b70-98ba-98533de7710b",
+        "geocode": toponym_to_find,
+        "format": "json"}
+
+    response = requests.get(geocoder_api_server, params=geocoder_params)
+
+    if response:
+        json_response = response.json()
+        toponym = json_response["response"]["GeoObjectCollection"][
+            "featureMember"][0]["GeoObject"]
+        toponym_coodrinates = toponym["Point"]["pos"]
+        return toponym_coodrinates.split(" ")
+    else:
+        return None, None
+
 
 def weather_response(place):
     # 39.954987 43.412182
-    coords = ("43.412182", "39.954987")
+    # coords = ("43.412182", "39.954987")
+    coords = get_coords(place)
+    print("Запрос погоды в ", place, coords )
     weather_api_server = 'https://api.weather.yandex.ru/v1/forecast?'
     weather_param = {
-        "lon" : float(coords[0]),
-        "lat" : float(coords[1]),
+        "lon": float(coords[0]),
+        "lat": float(coords[1]),
         "lang": "ru_RU"
     }
     response = requests.get(weather_api_server, weather_param, headers=headers)
     return response.json()
 
+
 def current_weather(response):
-    city = response["info"]["tzinfo"]["name"].split('/')[-1]
+    #print(response)
+    city = response['geo_object']['locality']['name']  #["info"]["tzinfo"]["name"].split('/')[-1]
     date = response["now_dt"][:10]
     offset = response["info"]["tzinfo"]["offset"] // 3600
     time = response["now_dt"][11:16]
@@ -38,12 +63,15 @@ def current_weather(response):
     wind_speed = fact["wind_speed"]
     pressure = fact["pressure_mm"]
     humidity = fact["humidity"]
-    return f'Current weather in {city} today {date} at time {time}:\n' \
-           f'Temperature: {temp},\n' \
+    urll = response['info']['url']
+    return f'Текущая погода в {city} сегодня {date} в {time}:\n' \
+           f'Температура: {temp},\n' \
            f'Pressure: {pressure} mm,\n' \
            f'Humidity: {humidity}%,\n' \
            f'{condition},\n' \
-           f'Wind {wind_dir}, {wind_speed} m/s.'
+           f'Wind {wind_dir}, {wind_speed} m/s.,\n\n' \
+           f'Подробно {urll}'
+
 
 @Bot.event
 async def on_ready():
@@ -54,13 +82,15 @@ async def on_ready():
             f'{guild.name}(id: {guild.id})'
         )
 
+
 @Bot.command(pass_context=True)
 async def hello(ctx):
     await ctx.send("Привет мой аналоговый друг!")
 
+
 @Bot.command(name="current")
-async def current(ctx):
-    response = weather_response("Сочи")
+async def current(ctx, place):
+    response = weather_response(place)
     message = current_weather(response)
     await ctx.send(message)
 
